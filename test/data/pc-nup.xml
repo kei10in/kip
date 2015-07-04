@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<psf:PrintCapabilities
+    version="1"
+    xmlns:psf="http://schemas.microsoft.com/windows/2003/08/printing/printschemaframework"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:ns0000="http://schemas.microsoft.com/windows/printing/oemdriverpt/Printer"
+    xmlns:psk="http://schemas.microsoft.com/windows/2003/08/printing/printschemakeywords">
+  <psf:Feature name="psk:JobNUpAllDocumentsContiguously">
+    <psf:Property name="psf:SelectionType">
+      <psf:Value xsi:type="xsd:QName">psk:PickOne</psf:Value>
+    </psf:Property>
+    <psf:Property name="psk:DisplayName">
+      <psf:Value xsi:type="xsd:string">Pages per Sheet</psf:Value>
+    </psf:Property>
+    <psf:Option constrained="psk:None">
+      <psf:Property name="psk:DisplayName">
+        <psf:Value xsi:type="xsd:string">1</psf:Value>
+      </psf:Property>
+      <psf:ScoredProperty name="psk:PagesPerSheet">
+        <psf:Value xsi:type="xsd:integer">1</psf:Value>
+      </psf:ScoredProperty>
+      <psf:Property name="psf:IdentityOption">
+        <psf:Value xsi:type="xsd:string">True</psf:Value>
+      </psf:Property>
+    </psf:Option>
+    <psf:Option constrained="psk:None">
+      <psf:Property name="psk:DisplayName">
+        <psf:Value xsi:type="xsd:string">2</psf:Value>
+      </psf:Property>
+      <psf:ScoredProperty name="psk:PagesPerSheet">
+        <psf:Value xsi:type="xsd:integer">2</psf:Value>
+      </psf:ScoredProperty>
+    </psf:Option>
+    <psf:Option constrained="psk:None">
+      <psf:Property name="psk:DisplayName">
+        <psf:Value xsi:type="xsd:string">4</psf:Value>
+      </psf:Property>
+      <psf:ScoredProperty name="psk:PagesPerSheet">
+        <psf:Value xsi:type="xsd:integer">4</psf:Value>
+      </psf:ScoredProperty>
+    </psf:Option>
+    <psf:Option constrained="psk:None">
+      <psf:Property name="psk:DisplayName">
+        <psf:Value xsi:type="xsd:string">6</psf:Value>
+      </psf:Property>
+      <psf:ScoredProperty name="psk:PagesPerSheet">
+        <psf:Value xsi:type="xsd:integer">6</psf:Value>
+      </psf:ScoredProperty>
+    </psf:Option>
+    <psf:Option constrained="psk:None">
+      <psf:Property name="psk:DisplayName">
+        <psf:Value xsi:type="xsd:string">9</psf:Value>
+      </psf:Property>
+      <psf:ScoredProperty name="psk:PagesPerSheet">
+        <psf:Value xsi:type="xsd:integer">9</psf:Value>
+      </psf:ScoredProperty>
+    </psf:Option>
+    <psf:Option constrained="psk:None">
+      <psf:Property name="psk:DisplayName">
+        <psf:Value xsi:type="xsd:string">16</psf:Value>
+      </psf:Property>
+      <psf:ScoredProperty name="psk:PagesPerSheet">
+        <psf:Value xsi:type="xsd:integer">16</psf:Value>
+      </psf:ScoredProperty>
+    </psf:Option>
+    <psf:Feature name="psk:PresentationDirection">
+      <psf:Property name="psf:SelectionType">
+        <psf:Value xsi:type="xsd:QName">psk:PickOne</psf:Value>
+      </psf:Property>
+      <psf:Property name="psk:DisplayName">
+        <psf:Value xsi:type="xsd:string">Order</psf:Value>
+      </psf:Property>
+      <psf:Option name="psk:RightBottom" constrained="psk:None">
+        <psf:Property name="psk:DisplayName">
+          <psf:Value xsi:type="xsd:string">Right then Down</psf:Value>
+        </psf:Property>
+      </psf:Option>
+      <psf:Option name="psk:BottomRight" constrained="psk:None">
+        <psf:Property name="psk:DisplayName">
+          <psf:Value xsi:type="xsd:string">Down then Right</psf:Value>
+        </psf:Property>
+      </psf:Option>
+      <psf:Option name="psk:LeftBottom" constrained="psk:None">
+        <psf:Property name="psk:DisplayName">
+          <psf:Value xsi:type="xsd:string">Left then Down</psf:Value>
+        </psf:Property>
+      </psf:Option>
+      <psf:Option name="psk:BottomLeft" constrained="psk:None">
+        <psf:Property name="psk:DisplayName">
+          <psf:Value xsi:type="xsd:string">Down then Left</psf:Value>
+        </psf:Property>
+      </psf:Option>
+    </psf:Feature>
+    <psf:Feature name="ns0000:Borders">
+      <psf:Property name="psf:SelectionType">
+        <psf:Value xsi:type="xsd:QName">psk:PickOne</psf:Value>
+      </psf:Property>
+      <psf:Property name="psk:DisplayName">
+        <psf:Value xsi:type="xsd:string">Border Drawing</psf:Value>
+      </psf:Property>
+      <psf:Option name="ns0000:Off" constrained="psk:None">
+        <psf:Property name="psk:DisplayName">
+          <psf:Value xsi:type="xsd:string">No/OFF</psf:Value>
+        </psf:Property>
+      </psf:Option>
+      <psf:Option name="ns0000:On" constrained="psk:None">
+        <psf:Property name="psk:DisplayName">
+          <psf:Value xsi:type="xsd:string">Yes/ON</psf:Value>
+        </psf:Property>
+      </psf:Option>
+    </psf:Feature>
+  </psf:Feature>
+</psf:PrintCapabilities>
