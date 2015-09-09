@@ -196,10 +196,23 @@ public:
     w.attribute("name", sp.name());
   }
 
-  void start(variable const& value) {
+  void start(value const& v) {
     w.start_element(psf::Value);
-    w.attribute(xsi::type, to_qname(value.type));
-    boost::apply_visitor(write_text(w), value.data);
+    w.attribute(xsi::type, to_qname(v.type()));
+    switch (v.type()) {
+    case value_type::string:
+      w.text(v.string_value());
+      break;
+    case value_type::qname:
+      w.text(v.qname_value());
+      break;
+    case value_type::integer:
+      w.text(v.integer_value());
+      break;
+    case value_type::decimal:
+      w.text(v.decimal_value());
+      break;
+    }
   }
 
   template <class T>

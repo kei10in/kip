@@ -13,6 +13,17 @@
 
 namespace kip {
 
+struct static_object {
+  std::string const empty_string;
+  xml::qname const empty_qname;
+  static_object() {}
+};
+
+static static_object const& statics() {
+  static static_object const s;
+  return s;
+}
+
 
 template <class T, class U>
 class named_element_map {
@@ -81,47 +92,109 @@ using parameter_def_collection = named_element_map<parameter_def, parameter_def_
 enum class value_type { string, qname, integer, decimal, };
 
 
-struct variable {
-  value_type type;
-  boost::variant<std::string, xml::qname, int, float> data;
+class value_holder {
+public:
+  virtual ~value_holder() {}
+  virtual value_type type() const = 0;
+  virtual std::string const& string_value() const = 0;
+  virtual xml::qname const& qname_value() const = 0;
+  virtual int integer_value() const = 0;
+  virtual float decimal_value() const = 0;
+  virtual bool equals(value_holder const& rhs) const = 0;
+  virtual bool equals(std::string const& rhs) const = 0;
+  virtual bool equals(xml::qname const& rhs) const = 0;
+  virtual bool equals(int rhs) const = 0;
+  virtual bool equals(float rhs) const = 0;
+};
 
-  variable() : type(value_type::string), data() {}
 
-  variable(std::string const& v)
-    : type(value_type::string), data(v) {}
+template <value_type tag, class T>
+class base_value_holder : public value_holder {
+protected:
+  T const value_;
+  explicit base_value_holder(T const& v) : value_(v) {}
+  value_type type() const override { return tag; }
+  std::string const& string_value() const override { return statics().empty_string; }
+  xml::qname const& qname_value() const override { return statics().empty_qname; }
+  int integer_value() const override { return 0; }
+  float decimal_value() const override { return 0.0; }
+  bool equals(value_holder const& rhs) const override { return rhs.equals(value_); }
+  bool equals(std::string const& rhs) const override { return false; }
+  bool equals(xml::qname const& rhs) const override { return false; }
+  bool equals(int rhs) const override { return false; }
+  bool equals(float rhs) const override { return false; }
+};
 
-  variable(xml::qname const& v)
-    : type(value_type::qname), data(v) {}
 
-  variable(int v)
-    : type(value_type::integer), data(v) {}
+class string_value_holder final
+  : public base_value_holder<value_type::string, std::string> {
+public:
+  explicit string_value_holder(std::string const& v) : base_value_holder(v) {}
+  std::string const& string_value() const override { return value_; }
+  bool equals(std::string const& rhs) const override { return value_ == rhs; }
+};
 
-  variable(float v)
-    : type(value_type::decimal), data(v) {}
 
-  bool operator==(variable const& rhs) const {
-    if (type != rhs.type) return false;
-    return data == rhs.data;
+class qname_value_holder final
+  : public base_value_holder<value_type::qname, xml::qname> {
+public:
+  explicit qname_value_holder(xml::qname const& v) : base_value_holder(v) {}
+  xml::qname const& qname_value() const override { return value_; }
+  bool equals(xml::qname const& rhs) const override { return value_ == rhs; }
+};
+
+
+class integer_value_holder final
+  : public base_value_holder<value_type::integer, int> {
+public:
+  explicit integer_value_holder(int v) : base_value_holder(v) {}
+  int integer_value() const override { return value_; }
+  bool equals(int rhs) const override { return value_ == rhs; }
+};
+
+
+class decimal_value_holder final
+  : public base_value_holder<value_type::decimal, float> {
+public:
+  explicit decimal_value_holder(float v) : base_value_holder(v) {}
+  float decimal_value() const override { return value_; }
+  bool equals(float rhs) const override { return value_ == rhs; }
+};
+
+
+class value {
+  std::shared_ptr<value_holder> holder;
+
+public:
+  value(std::string const& v)
+    : holder(std::make_shared<string_value_holder>(v))
+  {}
+
+  value(xml::qname const& v)
+    : holder(std::make_shared<qname_value_holder>(v))
+  {}
+
+  value(int v)
+    : holder(std::make_shared<integer_value_holder>(v))
+  {}
+
+  value(float v)
+    : holder(std::make_shared<decimal_value_holder>(v))
+  {}
+
+  value_type type() const                 { return holder->type(); }
+  std::string const& string_value() const { return holder->string_value(); }
+  xml::qname const& qname_value() const   { return holder->qname_value(); }
+  int integer_value() const               { return holder->integer_value() ;}
+  float decimal_value() const              { return holder->decimal_value(); }
+
+  bool operator==(value const& rhs) const {
+    return holder->equals(*rhs.holder);
   }
 
-  bool operator==(int rhs) const {
-    if (type != value_type::integer) return false;
-    return boost::get<int>(data) == rhs;
-  }
-
-  bool operator==(char const* rhs) const {
-    if (type != value_type::string) return false;
-    return boost::get<std::string>(data) == rhs;
-  }
-
-  bool operator==(std::string const& rhs) const {
-    if (type != value_type::string) return false;
-    return boost::get<std::string>(data) == rhs;
-  }
-
-  bool operator==(xml::qname const& rhs) const {
-    if (type != value_type::qname) return false;
-    return boost::get<xml::qname>(data) == rhs;
+  template <class T>
+  bool operator==(T const& rhs) const {
+    return holder->equals(rhs);
   }
 
   template <class F>
@@ -146,7 +219,7 @@ inline bool operator!=(parameter_ref const& lhs, parameter_ref const& rhs) {
 
 
 struct property_impl {
-  boost::optional<variable> value;
+  boost::optional<kip::value> value;
   property_collection properties;
 };
 
@@ -188,27 +261,18 @@ public:
     return pimpl == nullptr;
   }
 
-  xml::qname& operator=(xml::qname const& v) {
-    if (pimpl->value) {
-      pimpl->value->data = v;
-    } else {
-      pimpl->value = variable(v);
-    }
-    return boost::get<xml::qname>(pimpl->value->data);
+  kip::value const& value() const {
+    return *pimpl->value;
   }
 
-  std::string& operator=(std::string const& v) {
-    if (pimpl->value) {
-      pimpl->value->data = v;
-    } else {
-      pimpl->value = variable(v);
-    }
-    return boost::get<std::string>(pimpl->value->data);
+  property const& operator=(xml::qname const& v) {
+    pimpl->value = v;
+    return *this;
   }
 
-  template <class T>
-  T const& as() const {
-    return boost::get<T>(pimpl->value->data);
+  property const& operator=(std::string const& v) {
+    pimpl->value = v;
+    return *this;
   }
 
   template <class F>
@@ -228,8 +292,8 @@ public:
 
 
 struct scored_property_impl {
-  boost::variant<boost::blank, variable, parameter_ref> content;
-  boost::optional<variable> value;
+  boost::variant<boost::blank, kip::value, parameter_ref> content;
+  boost::optional<kip::value> value;
   scored_property_collection scored_properties;
   property_collection properties;
 };
@@ -270,9 +334,8 @@ public:
     return name_;
   }
 
-  template <class T>
-  T const& as() const {
-    return boost::get<T>(pimpl->value->data);
+  kip::value const& value() const {
+    return *pimpl->value;
   }
 
   template <class F>
@@ -452,7 +515,7 @@ public:
 
 
 struct parameter_init {
-  boost::optional<variable> value;
+  boost::optional<kip::value> value;
 };
 
 inline bool operator==(parameter_init const& lhs, parameter_init const& rhs) {

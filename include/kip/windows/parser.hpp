@@ -298,7 +298,44 @@ private:
     return parameter_ref { *name };
   }
 
-  boost::optional<variable> parse_value() {
+  boost::optional<value> parse_value() {
+    HRESULT const hr = com_raise_on_failure(
+      move_to_attribute_by_name(xsi::type));
+    if (hr != S_OK) return boost::none;
+
+    auto type = to_qname(get_value());
+
+    boost::optional<value> result;
+
+    XmlNodeType nt;
+    while (S_OK == reader->Read(&nt)) {
+      if (nt == XmlNodeType_Element) {
+        skip_subtree();
+      } else if (nt == XmlNodeType_EndElement) {
+        break;
+      } else if (nt == XmlNodeType_Text) {
+        std::string const text = get_value();
+        if (type == xsd::string) {
+          result = text;
+        } else if (type == xsd::QName) {
+          auto const qname = to_qname(text);
+          if (qname) {
+            result = *qname;
+          } else {
+            result = xml::qname{ text, "" };
+          }
+        } else if (type == xsd::integer) {
+          result = std::stoi(text);
+        } else if (type == xsd::decimal) {
+          result = std::stof(text);
+        }
+      }
+    }
+
+    return result;
+  }
+
+ /* boost::optional<variable> parse_value() {
     HRESULT const hr = com_raise_on_failure(
       move_to_attribute_by_name(xsi::type));
     if (hr != S_OK) return boost::none;
@@ -333,7 +370,7 @@ private:
     }
 
     return result;
-  }
+  }*/
 
   template <class Func>
   void enumerate_children(Func f) {

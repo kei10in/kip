@@ -42,7 +42,7 @@ TEST_CASE("Read Print Capabilities document") {
 		REQUIRE(op.scored_properties().size() > 0);
 		auto sp = op.scored_property(kip::psk::MediaSizeWidth);
 		REQUIRE(sp.empty() == false);
-		REQUIRE(sp.as<int>() == 215900);
+		REQUIRE(sp.value() == 215900);
 	  }
 	}
   }
@@ -60,14 +60,14 @@ TEST_CASE("Read Print Capabilities document") {
 		REQUIRE(op.scored_properties().size() > 0);
 		auto sp = op.scored_property(kip::psk::PagesPerSheet);
 		REQUIRE(sp.empty() == false);
-		REQUIRE(sp.as<int>() == 1);
+		REQUIRE(sp.value() == 1);
 	  }
 
 	  SECTION("read property") {
 		REQUIRE(op.properties().size() > 0);
 		auto p = op.property(kip::psk::DisplayName);
 		REQUIRE(p.empty() == false);
-		REQUIRE(p.as<std::string>() == "1");
+		REQUIRE(p.value() == "1");
 	  }
 	}
 
@@ -75,7 +75,7 @@ TEST_CASE("Read Print Capabilities document") {
 	  REQUIRE(ft.properties().size() > 0);
 	  auto p = ft.property(kip::psk::DisplayName);
 	  REQUIRE(p.empty() == false);
-	  REQUIRE(p.as<std::string>() == "Pages per Sheet");
+	  REQUIRE(p.value() == "Pages per Sheet");
 	}
 
 	SECTION("read sub feature") {
@@ -90,13 +90,13 @@ TEST_CASE("Read Print Capabilities document") {
 	auto p = pcd.parameter(kip::psk::JobCopiesAllDocuments);
 	REQUIRE(p.empty() == false);
 
-	REQUIRE(p.property(kip::psf::DataType).as<kip::xml::qname>() == kip::xsd::integer);
-	REQUIRE(p.property(kip::psf::Multiple).as<int>() == 1);
-	REQUIRE(p.property(kip::psf::MinValue).as<int>() == 1);
-	REQUIRE(p.property(kip::psf::MaxValue).as<int>() == 9999);
-	REQUIRE(p.property(kip::psf::DefaultValue).as<int>() == 1);
-	REQUIRE(p.property(kip::psf::Mandatory).as<kip::xml::qname>() == kip::psk::Unconditional);
-	REQUIRE(p.property(kip::psf::UnitType).as<std::string>() == "copies");
+	REQUIRE(p.property(kip::psf::DataType).value() == kip::xsd::integer);
+	REQUIRE(p.property(kip::psf::Multiple).value() == 1);
+	REQUIRE(p.property(kip::psf::MinValue).value() == 1);
+	REQUIRE(p.property(kip::psf::MaxValue).value() == 9999);
+	REQUIRE(p.property(kip::psf::DefaultValue).value() == 1);
+	REQUIRE(p.property(kip::psf::Mandatory).value() == kip::psk::Unconditional);
+	REQUIRE(p.property(kip::psf::UnitType).value() == "copies");
   }
 }
 
