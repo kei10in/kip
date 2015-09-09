@@ -9,6 +9,7 @@ namespace psf {
 constexpr char const* url = "http://schemas.microsoft.com/windows/2003/08/printing/printschemaframework";
 char const* const prefix = "psf";
 
+// Element Names
 xml::qname const PrintTicket       { "PrintTicket",       url };
 xml::qname const PrintCapabilities { "PrintCapabilities", url };
 xml::qname const Feature           { "Feature",           url };
@@ -20,6 +21,8 @@ xml::qname const Property          { "Property",          url };
 xml::qname const ScoredProperty    { "ScoredProperty",    url };
 xml::qname const Value             { "Value",             url };
 
+// Property Name for Feature
+xml::qname const SelectionType  { "SelectionType", url };
 
 xml::qname const DataType     { "DataType",     url };
 xml::qname const DefaultValue { "DefaultValue", url };

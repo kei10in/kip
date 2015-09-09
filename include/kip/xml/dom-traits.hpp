@@ -18,6 +18,14 @@ template <class T> using element   = typename dom_traits<T>::element;
 template <class T> using attribute = typename dom_traits<T>::attribute;
 
 
+// search prefix related with uri
+// if found; first value is prefix, second value is true
+// else; first value is emputy string, second value is false.
+template <class T>
+std::pair<std::string, bool>
+find_prefix(element<T> node, std::string const& uri)
+
+
 template <class T>
 void set_document_element(document<T> document, element<T> element);
 
@@ -37,6 +45,10 @@ attribute<T> create_attribute_ns(document<T> document,
 
 
 // Element node
+template <class T>
+attribute<T> get_attribute_node(element<T> elem, std::string const& name);
+
+
 template <class T>
 attribute<T> set_attribute_node(element<T> elem, attribute<T> attr);
 

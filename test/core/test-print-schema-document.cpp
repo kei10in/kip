@@ -1,26 +1,50 @@
 #include "catch.hpp"
 
-#include "kip/core/elements.hpp"
-#include "kip/keywords.hpp"
+#include "kip/kip.hpp"
 
 
 namespace {
 
 
-TEST_CASE("printschema-document is factory of printschema elements") {
-  kip::print_schema_document psd;
+TEST_CASE("construct print-capabilities") {
+  using namespace kip;
 
-  kip::option op { kip::psk::ISOA4 };
-  op.scored_properties.emplace(kip::psk::MediaSizeWidth, 210000);
-  op.scored_properties.emplace(kip::psk::MediaSizeHeight, 297000);
+  feature_impl ft0(psk::PageMediaSize);
+  ft0.property(psf::SelectionType) = psk::PickOne;
+  ft0.property(psk::DisplayName) = "Paper Size";
 
-  kip::feature ft { { op } };
+  REQUIRE(ft0.property(psf::SelectionType).as<xml::qname>() == psk::PickOne);
+  //REQUIRE(ft0.property(psk::DisplayName).as<std::string>() == "Paper Size")
 
-  psd.features.emplace(kip::psk::PageMediaSize, ft);
-
-  auto it = psd.features.find(kip::psk::PageMediaSize);
-  REQUIRE(it != psd.features.end());
-  REQUIRE(it->first == kip::psk::PageMediaSize);
+  // option op0(psk::ISOA4);
+  // op0.property(psk::DisplayName) = "A4";
+  // op0.scored_property(psk::MediaSizeWidth) = 210000;
+  // op0.scored_property(psk::MediaSizeHeight) = 297000;
+  // ft0.add(op0);
+  //
+  // option op1(psk::NorthAmericaLetter);
+  // op1.property(psk::DisplayName) = "Letter";
+  // op1.scored_property(psk::MediaSizeWidth) = 215900;
+  // op1.scored_property(psk::MediaSizeHeight) = 279400;
+  // ft1.add(op1);
+  //
+  // feature ft1(psk::JobNUpAllDocumentsContiguously);
+  // ft1.property(psk::SelectionType) = psk::PickOne;
+  // ft0.property(psk::DisplayName) = "N up";
+  //
+  // option op2;
+  // op2.property(psk::DisplayName) = "2 up";
+  // op2.scored_property(psk::PagesPerSheet) = 2;
+  // ft1.add(op2);
+  //
+  // option op3;
+  // op3.property(psk::DisplayName) = "4 up";
+  // op3.scored_property(psk::PagesPerSheet) = 4;
+  // ft1.add(op3);
+  //
+  // print_capabilities pc(1, "http://example.com/print-schema", "vnd");
+  // pc.add(ft0);
+  // pc.add(ft1);
 }
 
 

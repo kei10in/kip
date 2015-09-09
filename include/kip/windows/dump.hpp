@@ -7,7 +7,7 @@
 #include <iterator>
 #include <string>
 
-#include "kip/core/elements.hpp"
+#include "kip/elements.hpp"
 #include "kip/windows/defs.hpp"
 #include "kip/windows/utils.hpp"
 #include "kip/xml-ns.hpp"
@@ -121,7 +121,7 @@ public:
   }
 };
 
-xml::qname to_qname(value_type vt) {
+inline xml::qname to_qname(value_type vt) {
   switch (vt) {
     default:
     case value_type::string:  return xsd::string;
@@ -141,131 +141,87 @@ struct write_text : public boost::static_visitor<void> {
   }
 };
 
-inline void dump(xml_writer& w, variable const& value) {
-  w.start_element(psf::Value);
-  w.attribute(xsi::type, to_qname(value.type));
-  boost::apply_visitor(write_text(w), value.data);
-  w.end_element();
-}
 
-inline void dump(xml_writer& w, std::pair<xml::qname, property> const& p) {
-  w.start_element(psf::Property);
-  w.attribute("name", p.first);
-  if (p.second.value) {
-    dump(w, *p.second.value);
-  }
-  for (auto const& pp : p.second.properties) {
-    dump(w, pp);
-  }
+class serializer {
+  xml_writer w;
 
-  w.end_element();
-}
+public:
+  serializer(IStream* s)
+	: w(s)
+  {}
 
-inline void dump(xml_writer& w, std::pair<xml::qname, scored_property> const& sp) {
-  w.start_element(psf::ScoredProperty);
-  w.attribute("name", sp.first);
-  if (sp.second.value) {
-    dump(w, *sp.second.value);
-  }
-  for (auto const& p : sp.second.properties) {
-    dump(w, p);
-  }
-  for (auto const& sp : sp.second.scored_properties) {
-    dump(w, sp);
-  }
-  w.end_element();
-}
+  void start(print_capabilities const& pcd) {
+    w.start_document();
+    w.start_element(psf::prefix, psf::PrintCapabilities);
 
-inline void dump(xml_writer& w, option const& o) {
-  w.start_element(psf::Option);
-  if (o.name) {
-    w.attribute("name", *o.name);
-  }
-  for (auto const& p : o.properties) {
-    dump(w, p);
-  }
-  for (auto const& sp : o.scored_properties) {
-    dump(w, sp);
-  }
-  w.end_element();
-}
+    w.attribute("version", pcd.version());
 
-inline void dump(xml_writer& w, std::pair<xml::qname, feature> const& f) {
-  w.start_element(psf::Feature);
-  w.attribute("name", f.first);
-  for (auto const& o : f.second.options) {
-    dump(w, o);
-  }
-  for (auto const& p : f.second.properties) {
-    dump(w, p);
-  }
-  for (auto const& sf : f.second.sub_features) {
-    dump(w, sf);
-  }
-  w.end_element();
-}
-
-inline void dump(xml_writer& w, std::pair<xml::qname, parameter_init> const& pi) {
-  w.start_element(psf::ParameterInit);
-  w.attribute("name", pi.first);
-  if (pi.second.value) {
-    dump(w, *pi.second.value);
-  }
-  w.end_element();
-}
-
-inline void dump(xml_writer& w, std::pair<xml::qname, parameter_def> const& pd) {
-  w.start_element(psf::ParameterDef);
-  w.attribute("name", pd.first);
-  for (auto const& p : pd.second.properties) {
-    dump(w, p);
-  }
-  w.end_element();
-}
-
-inline void dump(xml_writer& w, print_capabilities_document const& pcd) {
-  w.start_element(psf::prefix, psf::PrintCapabilities);
-
-  w.attribute("version", pcd.version);
-
-  w.xmlns(psf::prefix, psf::url);
-  w.xmlns(psk::prefix, psk::url);
-  w.xmlns(xsi::prefix, xsi::url);
-  w.xmlns(xsd::prefix, xsd::url);
-  w.xmlns(pcd.device_namespace_prefix, pcd.device_namespace);
-
-  for (auto const& f : pcd.features) {
-    dump(w, f);
+    w.xmlns(psf::prefix, psf::url);
+    w.xmlns(psk::prefix, psk::url);
+    w.xmlns(xsi::prefix, xsi::url);
+    w.xmlns(xsd::prefix, xsd::url);
+    w.xmlns(pcd.device_namespace_prefix(), pcd.device_namespace());
   }
 
-  for (auto const& prop : pcd.properties) {
-    dump(w, prop);
+  void end(print_capabilities const& pcd) {
+    w.end_element();
+    w.end_document();
+	w.flush();
   }
 
-  for (auto const& param: pcd.parameters) {
-    dump(w, param);
+  void start(feature_def const& ft) {
+    w.start_element(psf::Feature);
+    w.attribute("name", ft.name());
   }
 
-  w.end_element();
-}
+  void start(option const& o) {
+    w.start_element(psf::Option);
+    if (o.name()) {
+      w.attribute("name", *o.name());
+    }
+  }
+
+  void start(parameter_def const& pd) {
+    w.start_element(psf::ParameterDef);
+    w.attribute("name", pd.name());
+  }
+
+  void start(property const& p) {
+    w.start_element(psf::Property);
+    w.attribute("name", p.name());
+  }
+
+  void start(scored_property const& sp) {
+    w.start_element(psf::ScoredProperty);
+    w.attribute("name", sp.name());
+  }
+
+  void start(variable const& value) {
+    w.start_element(psf::Value);
+    w.attribute(xsi::type, to_qname(value.type));
+    boost::apply_visitor(write_text(w), value.data);
+  }
+
+  template <class T>
+  void end(T const& e) {
+    w.end_element();
+  }
+};
+
 
 }  // namespace detail
 
 
-inline void dump(print_capabilities_document const& pcd, IStream* out) {
-  detail::xml_writer w(out);
-
-  w.start_document();
-  dump(w, pcd);
-  w.end_document();
-
-  w.flush();
+inline void dump(print_capabilities const& pcd, IStream* out) {
+  detail::serializer s(out);
+  pcd.traverse(s);
 }
 
 
-inline std::string dump(print_capabilities_document const& pcd) {
+inline std::string dump(print_capabilities const& pcd) {
   IStreamPtr out;
   out.Attach(SHCreateMemStream(nullptr, 0));
+
   dump(pcd, out);
 
   LARGE_INTEGER pos = {};

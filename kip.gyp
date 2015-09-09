@@ -5,8 +5,7 @@
             'third_party/catch',
         ],
         'sources': [
-            'include/kip/core/elements.hpp',
-            'include/kip/core/psom.hpp',
+            'include/kip/elements.hpp',
             'include/kip/windows/dom-traits.hpp',
             'include/kip/windows/utils.hpp',
             'include/kip/windows/utils.hpp',
@@ -44,10 +43,12 @@
                     'sources': [
                         'test/windows/main.cpp',
                         'test/windows/test-print-schema-document.cpp',
+                        'test/windows/test-hoge.cpp'
                     ],
                     'link_settings': {
                         'libraries': [
                             'Ole32.lib',
+                            'Prntvpt.lib',
                             'Shlwapi.lib',
                             'XmlLite.lib',
                         ],

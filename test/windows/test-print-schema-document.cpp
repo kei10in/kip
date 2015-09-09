@@ -22,103 +22,81 @@ TEST_CASE("Read Print Capabilities document") {
   com_raise_on_failure(SHCreateStreamOnFileW(path, STGM_READ, &s));
 
   auto pcd = kip::windows::parse_print_capabilities(s, device_namespace);
-  REQUIRE(pcd);
+  REQUIRE(!pcd.empty());
 
   SECTION("read feature: PageMediaSize") {
-    REQUIRE(pcd->features.size() == 11);
-    auto const& ft = pcd->features.find(kip::psk::PageMediaSize);
-    REQUIRE(ft != pcd->features.end());
+	REQUIRE(pcd.features().size() == 11);
 
-    SECTION("read option") {
-      REQUIRE(ft->second.options.size() > 0);
-      auto const& op = ft->second.options[0];
-      REQUIRE(op.name);
-      REQUIRE(*op.name == kip::psk::NorthAmericaLetter);
-      REQUIRE(op.constrained);
-      REQUIRE(*op.constrained == kip::psk::None);
+	auto ft = pcd.feature(kip::psk::PageMediaSize);
+	REQUIRE(ft.empty() == false);
 
-      SECTION("read scored property") {
-        REQUIRE(op.scored_properties.size() > 0);
-        auto sp = op.scored_properties.find(kip::psk::MediaSizeWidth);
-        REQUIRE(sp != op.scored_properties.end());
-        REQUIRE(sp->second.value);
-        REQUIRE(*sp->second.value == 215900);
-      }
-    }
+	SECTION("read option") {
+	  REQUIRE(ft.options().size() > 0);
+	  auto op = ft.options()[0];
+	  REQUIRE(op.name());
+	  REQUIRE(*op.name() == kip::psk::NorthAmericaLetter);
+	  REQUIRE(op.constrained());
+	  REQUIRE(*op.constrained() == kip::psk::None);
+
+	  SECTION("read scored property") {
+		REQUIRE(op.scored_properties().size() > 0);
+		auto sp = op.scored_property(kip::psk::MediaSizeWidth);
+		REQUIRE(sp.empty() == false);
+		REQUIRE(sp.as<int>() == 215900);
+	  }
+	}
   }
 
   SECTION("read feature: JobNUpAllDocumentsContiguously") {
-    REQUIRE(pcd->features.size() > 0);
-    auto const& ft = pcd->features.find(kip::psk::JobNUpAllDocumentsContiguously);
-    REQUIRE(ft != pcd->features.end());
+	REQUIRE(pcd.features().size() > 0);
+	auto ft = pcd.feature(kip::psk::JobNUpAllDocumentsContiguously);
+	REQUIRE(ft.empty() == false);
 
-    SECTION("read option") {
-      REQUIRE(ft->second.options.size() == 6);
-      auto const& op = ft->second.options[0];
+	SECTION("read option") {
+	  REQUIRE(ft.options().size() == 6);
+	  auto op = ft.options()[0];
 
-      SECTION("read scored property") {
-        REQUIRE(op.scored_properties.size() > 0);
-        auto sp = op.scored_properties.find(kip::psk::PagesPerSheet);
-        REQUIRE(sp != op.scored_properties.end());
-        REQUIRE(sp->second.value);
-        REQUIRE(*sp->second.value == 1);
-      }
+	  SECTION("read scored property") {
+		REQUIRE(op.scored_properties().size() > 0);
+		auto sp = op.scored_property(kip::psk::PagesPerSheet);
+		REQUIRE(sp.empty() == false);
+		REQUIRE(sp.as<int>() == 1);
+	  }
 
-      SECTION("read property") {
-        REQUIRE(op.properties.size() > 0);
-        auto p = op.properties.find(kip::psk::DisplayName);
-        REQUIRE(p != op.properties.end());
-        REQUIRE(p->second.value);
-        REQUIRE(*p->second.value == "1");
-      }
-    }
+	  SECTION("read property") {
+		REQUIRE(op.properties().size() > 0);
+		auto p = op.property(kip::psk::DisplayName);
+		REQUIRE(p.empty() == false);
+		REQUIRE(p.as<std::string>() == "1");
+	  }
+	}
 
-    SECTION("read property of feature") {
-      REQUIRE(ft->second.properties.size() > 0);
-      auto p = ft->second.properties.find(kip::psk::DisplayName);
-      REQUIRE(p != ft->second.properties.end());
-      REQUIRE(p->second.value);
-      REQUIRE(*p->second.value == "Pages per Sheet");
-    }
+	SECTION("read property of feature") {
+	  REQUIRE(ft.properties().size() > 0);
+	  auto p = ft.property(kip::psk::DisplayName);
+	  REQUIRE(p.empty() == false);
+	  REQUIRE(p.as<std::string>() == "Pages per Sheet");
+	}
 
-    SECTION("read sub feature") {
-      REQUIRE(ft->second.sub_features.size() > 0);
-      auto sft = ft->second.sub_features.find(kip::psk::PresentationDirection);
-      REQUIRE(sft != ft->second.sub_features.end());
-      REQUIRE(sft->first == kip::psk::PresentationDirection);
-    }
+	SECTION("read sub feature") {
+	  REQUIRE(ft.sub_features().size() > 0);
+	  auto sft = ft.sub_feature(kip::psk::PresentationDirection);
+	  REQUIRE(sft.empty() == false);
+	  REQUIRE(sft.name() == kip::psk::PresentationDirection);
+	}
   }
 
   SECTION("read parameter: copies") {
-    auto p = pcd->parameters.find(kip::psk::JobCopiesAllDocuments);
-    REQUIRE(p != pcd->parameters.end());
-    auto const& pd = p->second;
-    auto const& dt = pd.properties.find(kip::psf::DataType)->second;
-    REQUIRE(*dt.value == kip::xsd::integer);
+	auto p = pcd.parameter(kip::psk::JobCopiesAllDocuments);
+	REQUIRE(p.empty() == false);
 
-    auto const& mult = pd.properties.find(kip::psf::Multiple);
-    REQUIRE(mult != pd.properties.end());
-    REQUIRE(*mult->second.value == 1);
-
-    auto const& mini = pd.properties.find(kip::psf::MinValue);
-    REQUIRE(mini != pd.properties.end());
-    REQUIRE(*mini->second.value == 1);
-
-    auto const& maxi = pd.properties.find(kip::psf::MaxValue);
-    REQUIRE(maxi != pd.properties.end());
-    REQUIRE(*maxi->second.value == 9999);
-
-    auto const& dv = pd.properties.find(kip::psf::DefaultValue);
-    REQUIRE(dv != pd.properties.end());
-    REQUIRE(*dv->second.value == 1);
-
-    auto const& ma = pd.properties.find(kip::psf::Mandatory);
-    REQUIRE(ma != pd.properties.end());
-    REQUIRE(*ma->second.value == kip::psk::Unconditional);
-
-    auto const& ut = pd.properties.find(kip::psf::UnitType);
-    REQUIRE(ut != pd.properties.end());
-    REQUIRE(*ut->second.value == "copies");
+	REQUIRE(p.property(kip::psf::DataType).as<kip::xml::qname>() == kip::xsd::integer);
+	REQUIRE(p.property(kip::psf::Multiple).as<int>() == 1);
+	REQUIRE(p.property(kip::psf::MinValue).as<int>() == 1);
+	REQUIRE(p.property(kip::psf::MaxValue).as<int>() == 9999);
+	REQUIRE(p.property(kip::psf::DefaultValue).as<int>() == 1);
+	REQUIRE(p.property(kip::psf::Mandatory).as<kip::xml::qname>() == kip::psk::Unconditional);
+	REQUIRE(p.property(kip::psf::UnitType).as<std::string>() == "copies");
   }
 }
 
@@ -134,22 +112,21 @@ TEST_CASE("Write") {
 
   IStreamPtr os;
   os.Attach(SHCreateMemStream(nullptr, 0));
-  kip::windows::dump(*pcd, os);
+  kip::windows::dump(pcd, os);
 
   LARGE_INTEGER pos = {};
   os->Seek(pos, STREAM_SEEK_SET, nullptr);
 
   auto pcd2 = kip::windows::parse_print_capabilities(os, device_namespace);
 
-  std::string const s1 = kip::windows::dump(*pcd);
-  std::string const s2 = kip::windows::dump(*pcd2);
-  REQUIRE(s1 == s2);
-  
-  REQUIRE(pcd->version == pcd2->version);
-  REQUIRE(pcd->device_namespace == pcd2->device_namespace);
-  REQUIRE(pcd->features.size() == pcd2->features.size());
-  REQUIRE(pcd->properties.size() == pcd2->properties.size());
-  REQUIRE(pcd->parameters.size() == pcd2->parameters.size());
+  std::string const s1 = kip::windows::dump(pcd);
+  std::string const s2 = kip::windows::dump(pcd2);
+
+  REQUIRE(pcd.version() == pcd2.version());
+  REQUIRE(pcd.device_namespace() == pcd2.device_namespace());
+  REQUIRE(pcd.features().size() == pcd2.features().size());
+  REQUIRE(pcd.properties().size() == pcd2.properties().size());
+  REQUIRE(pcd.parameters().size() == pcd2.parameters().size());
 }
 
 

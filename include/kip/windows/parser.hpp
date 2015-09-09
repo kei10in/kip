@@ -7,7 +7,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "kip/core/elements.hpp"
+#include "kip/elements.hpp"
 #include "kip/windows/defs.hpp"
 #include "kip/windows/utils.hpp"
 
@@ -47,38 +47,38 @@ class parser {
   std::string const& device_namespace() const { return device_namespace_; }
   std::string& device_namespace() { return device_namespace_; }
 
-  boost::optional<print_capabilities_document> parse_print_capabilities() {
+  print_capabilities parse_print_capabilities() {
     auto const tag = to_first_element();
-    if (tag != kip::psf::PrintCapabilities)
-      return boost::none;
+	if (tag != kip::psf::PrintCapabilities)
+	  return print_capabilities();
 
     parse_namespace_declaration();
 
     boost::optional<int> version = get_version_attribute();
-    if (!version) return boost::none;
+	if (!version) return print_capabilities();
 
-    print_capabilities_document result {
-       *version, device_namespace(), device_namespace_prefix() };
+	auto result = std::make_shared<print_capabilities_impl>(
+	  *version, device_namespace(), device_namespace_prefix());
 
     enumerate_children([this, &result](xml::qname const& tag) {
       if (tag == psf::Feature) {
         auto ft = parse_feature();
         if (ft) {
-          result.features.insert(*ft);
+          result->features.insert(*ft);
         } else {
           // todo: implementerror handling
         }
       } else if (tag == psf::Property) {
         auto p = parse_property();
         if (p) {
-          result.properties.insert(*p);
+          result->properties.insert(*p);
         } else {
           // todo: implement error handling
         }
       } else if (tag == psf::ParameterDef) {
         auto pd = parse_parameter_def();
         if (pd) {
-          result.parameters.insert(*pd);
+          result->parameters.insert(*pd);
         } else {
           // todo: implement error handling
         }
@@ -88,7 +88,7 @@ class parser {
       }
     });
 
-    return result;
+    return print_capabilities(result);
   }
 
 private:
@@ -113,32 +113,32 @@ private:
     return get_qname();
   }
 
-  boost::optional<std::pair<xml::qname, feature>> parse_feature() {
+  boost::optional<std::pair<xml::qname, std::shared_ptr<feature_impl>>> parse_feature() {
     auto const name = get_name_attribute();
     if (!name) return boost::none;
     auto const& name_ = *name;
 
-    feature ft;
+    std::shared_ptr<feature_impl> ft = std::make_shared<feature_impl>();
 
     enumerate_children([this, &ft](xml::qname const& tag) {
       if (tag == psf::Option) {
         auto op = parse_option();
         if (op) {
-          ft.options.push_back(std::move(*op));
+          ft->options.push_back(option(*op));
         } else {
           // todo: implement error handling
         }
       } else if (tag == psf::Property) {
         auto p = parse_property();
         if (p) {
-          ft.properties.insert(*p);
+          ft->properties.insert(*p);
         } else {
           // todo: implement error handling
         }
       } else if (tag == psf::Feature) {
         auto sft = parse_feature();
         if (sft) {
-          ft.sub_features.insert(*sft);
+          ft->sub_features.insert(*sft);
         } else {
           // todo: implement error handling
         }
@@ -151,24 +151,25 @@ private:
     return std::make_pair(name_, ft);
   }
 
-  boost::optional<option> parse_option() {
+  boost::optional<std::shared_ptr<option_impl>> parse_option() {
     auto const name = get_name_attribute();
     auto const constrained = get_constrained_attribute();
 
-    option op { name, constrained };
+    std::shared_ptr<option_impl> op
+	  = std::make_shared<option_impl>(name, constrained);
 
     enumerate_children([this, &op](xml::qname const& tag) {
       if (tag == psf::ScoredProperty) {
         auto sp = parse_scored_property();
         if (sp) {
-          op.scored_properties.insert(*sp);
+          op->scored_properties.insert(*sp);
         } else {
           // todo: implement error handling
         }
       } else if (tag == psf::Property) {
         auto p = parse_property();
         if (p) {
-          op.properties.insert(*p);
+          op->properties.insert(*p);
         } else {
           // todo: implement error handling
         }
@@ -180,17 +181,18 @@ private:
     return op;
   }
 
-  boost::optional<std::pair<xml::qname, parameter_def>> parse_parameter_def() {
+  boost::optional<std::pair<xml::qname, std::shared_ptr<parameter_def_impl>>> parse_parameter_def() {
     auto const name = get_name_attribute();
     if (!name) return boost::none;
 
-    parameter_def pd;
+	std::shared_ptr<parameter_def_impl> pd
+	  = std::make_shared<parameter_def_impl>();
 
     enumerate_children([this, &pd](xml::qname const& tag) {
       if (tag == psf::Property) {
         auto p = parse_property();
         if (p) {
-          pd.properties.insert(*p);
+          pd->properties.insert(*p);
         } else {
           // todo: implement error handling
         }
@@ -224,25 +226,26 @@ private:
     return pi;
   }
 
-  boost::optional<std::pair<xml::qname, scored_property>>
+  boost::optional<std::pair<xml::qname, std::shared_ptr<scored_property_impl>>>
   parse_scored_property() {
     auto const name = get_name_attribute();
     if (!name) return boost::none;
 
-    scored_property sp;
+    std::shared_ptr<scored_property_impl> sp
+	  = std::make_shared<scored_property_impl>();
 
     enumerate_children([this, &sp](xml::qname const& tag) {
       if (tag == psf::Value) {
         auto value = parse_value();
         if (value) {
-          sp.value = *value;
+          sp->value = *value;
         } else {
           // todo: error handling
         }
       } else if (tag == psf::ParameterRef) {
         auto pr = parse_parameter_ref();
         if (pr) {
-          sp.content = *pr;
+          sp->content = *pr;
         } else {
           // todo: error handling
         }
@@ -256,25 +259,25 @@ private:
     return std::make_pair(*name, sp);
   }
 
-  boost::optional<std::pair<xml::qname, property>> parse_property() {
+  boost::optional<std::pair<xml::qname, std::shared_ptr<property_impl>>> parse_property() {
     auto const name = get_name_attribute();
     if (!name) return boost::none;
 	auto const& name_ = *name;
 
-    property prop;
+    std::shared_ptr<property_impl> prop = std::make_shared<property_impl>();
 
     enumerate_children([this, &prop](xml::qname const& tag) {
       if (tag == psf::Value) {
         auto value = parse_value();
         if (value) {
-          prop.value = *value;
+          prop->value = *value;
         } else {
           // todo: error handling
         }
       } else if (tag == psf::Property) {
         auto p = parse_property();
         if (p) {
-          prop.properties.insert(*p);
+          prop->properties.insert(*p);
         } else {
           // todo: error handling
         }
@@ -375,6 +378,8 @@ private:
       }
 	  hr = reader->MoveToNextAttribute();
     }
+	// todo: implement
+	return "";
   }
 
   void parse_namespace_declaration() {
@@ -462,14 +467,14 @@ private:
 };
 
 
-boost::optional<print_capabilities_document> parse_print_capabilities(
+inline print_capabilities parse_print_capabilities(
   IXmlReader* r, std::string const& device_namespace) {
   parser p(r, device_namespace);
   return p.parse_print_capabilities();
 }
 
 
-boost::optional<print_capabilities_document> parse_print_capabilities(
+inline print_capabilities parse_print_capabilities(
   IStream* s, std::string const& device_namespace) {
   IXmlReaderPtr r;
   com_raise_on_failure(CreateXmlReader(__uuidof(IXmlReader), (void**)&r, nullptr));

@@ -23,13 +23,24 @@ struct tag {
 
 namespace xml {
 
-inline _bstr_t to_bstr(std::string const& s)
+
+// search prefix related with uri
+template <>
+std::pair<std::string, bool>
+find_prefix<msxml::tag>(
+  MSXML2::IXMLDOMElementPtr element, std::string const& uri)
 {
-  std::wstring_convert<
-    std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>,
-    wchar_t> utf16le_conv;
-  std::wstring ws = utf16le_conv.from_bytes(s.data());
-  return ws.c_str();
+  MSXML2::IMXNamespaceManager nm(CLSID_MXNamespaceManager60);
+  nm->pushNodeContext(element, TRUE);
+
+  MSXML2::IMXNamespacePrefixes prefixes;
+  nm->getPrefixes(to_bstr(uri), &prefixes);
+
+  if (prefixes->length == 0) {
+    return std::make_pair("", false);
+  } else {
+    return std::make_pair(from_bstr(prefixes->item[0], true));
+  }
 }
 
 
@@ -68,6 +79,14 @@ MSXML2::IXMLDOMAttributePtr create_attribute_ns<msxml::tag>(
 
 
 // Element node
+template <>
+MSXML2::IXMLDOMAttribute get_attribute_node<msxml::tag>(
+  MSXML::IXMLDOMElementPtr elem, std::string const& name)
+{
+  return elem->getAttributeNode(to_bstr(name));
+}
+
+
 template <>
 MSXML2::IXMLDOMAttributePtr set_attribute_node<msxml::tag>(
   MSXML2::IXMLDOMElementPtr elem, MSXML2::IXMLDOMAttributePtr attr)

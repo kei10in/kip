@@ -9,13 +9,16 @@ namespace psk {
 char const* const url = "http://schemas.microsoft.com/windows/2003/08/printing/printschemakeywords";
 char const* const prefix = "psk";
 
+// Values for SelectionType
+xml::qname const PickOne  { "PickOne",  url };
+xml::qname const PickMany { "PickMany", url };
+
 xml::qname const DisplayName { "DisplayName", url };
 
 xml::qname const None                { "None", url };
 xml::qname const PrintTicketSettings { "PrintTicketSettings", url };
 xml::qname const AdminSettings       { "AdminSettings", url };
 xml::qname const DeviceSettings      { "DeviceSettings", url };
-
 
 xml::qname const Unconditional { "Unconditional", url };
 xml::qname const Conditional   { "Conditional",   url };
