@@ -13,6 +13,12 @@ struct qname {
   std::string name;
   std::string url;
 
+  qname() {}
+  qname(std::string const& name, std::string const& url)
+    : name(name)
+    , url(url)
+  {}
+
   size_t hash() const {
     size_t h = 0;
     hash_combine(h, name);
