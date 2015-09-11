@@ -1,5 +1,28 @@
 {
     'target_defaults': {
+        'configurations': {
+            'Debug_Win32': {
+                'msvs_configuration_platform': 'Win32',
+                'msbuild_settings': {
+                    'ClCompile': {
+                        'Optimization': 'Disabled',
+                        'RuntimeLibrary': 'MultiThreadedDebugDLL',
+                    },
+                },
+            },
+            'Debug_x64': {
+                'inherit_from': [ 'Debug_Win32' ],
+                'msvs_configuration_platform': 'x64',
+            },
+            'Release_Win32': {
+                'defines': [ 'NDEBUG' ],
+                'msvs_configuration_platform': 'Win32',
+            },
+            'Release_x64': {
+                'inherit_from': [ 'Release_Win32' ],
+                'msvs_configuration_platform': 'x64',
+            },
+        },
         'include_dirs': [
             'include',
             'third_party/catch',
@@ -20,7 +43,10 @@
             'include/kip/keywords.hpp',
             'include/kip/print-schema.hpp',
             'include/kip/xml-ns.hpp',
-        ]
+        ],
+        'msbuild_configuration_attributes': {
+            'CharacterSet': 'Unicode'
+        }
     },
     'targets': [
         {
