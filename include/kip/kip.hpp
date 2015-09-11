@@ -1,7 +1,7 @@
 #ifndef KIP_KIP_HPP_
 #define KIP_KIP_HPP_
 
-#include "elements.hpp"
+#include "kip/elements.hpp"
 #include "kip/framework.hpp"
 #include "kip/keywords.hpp"
 
