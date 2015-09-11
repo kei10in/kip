@@ -33,10 +33,8 @@ TEST_CASE("Read Print Capabilities document") {
 	SECTION("read option") {
 	  REQUIRE(ft.options().size() > 0);
 	  auto op = ft.options()[0];
-	  REQUIRE(op.name());
-	  REQUIRE(*op.name() == kip::psk::NorthAmericaLetter);
-	  REQUIRE(op.constrained());
-	  REQUIRE(*op.constrained() == kip::psk::None);
+	  REQUIRE(op.name() == kip::psk::NorthAmericaLetter);
+	  REQUIRE(op.constrained() == kip::psk::None);
 
 	  SECTION("read scored property") {
 		REQUIRE(op.scored_properties().size() > 0);

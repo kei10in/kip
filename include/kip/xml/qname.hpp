@@ -19,6 +19,10 @@ struct qname {
     , url(url)
   {}
 
+  bool empty() const {
+    return name.empty() && url.empty();
+  }
+
   size_t hash() const {
     size_t h = 0;
     hash_combine(h, name);

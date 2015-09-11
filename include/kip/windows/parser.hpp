@@ -115,8 +115,7 @@ private:
 
   boost::optional<std::pair<xml::qname, std::shared_ptr<feature_impl>>> parse_feature() {
     auto const name = get_name_attribute();
-    if (!name) return boost::none;
-    auto const& name_ = *name;
+    if (name.empty()) return boost::none;
 
     std::shared_ptr<feature_impl> ft = std::make_shared<feature_impl>();
 
@@ -148,7 +147,7 @@ private:
       }
     });
 
-    return std::make_pair(name_, ft);
+    return std::make_pair(name, ft);
   }
 
   boost::optional<std::shared_ptr<option_impl>> parse_option() {
@@ -183,7 +182,7 @@ private:
 
   boost::optional<std::pair<xml::qname, std::shared_ptr<parameter_def_impl>>> parse_parameter_def() {
     auto const name = get_name_attribute();
-    if (!name) return boost::none;
+    if (name.empty()) return boost::none;
 
 	std::shared_ptr<parameter_def_impl> pd
 	  = std::make_shared<parameter_def_impl>();
@@ -201,19 +200,19 @@ private:
       }
     });
 
-    return std::make_pair(*name, pd);
+    return std::make_pair(name, pd);
   }
 
   boost::optional<parameter_init> parse_parameter_init() {
     auto const name = get_name_attribute();
-    if (!name) return boost::none;
+    if (name.empty()) return boost::none;
 
     parameter_init pi;
 
     enumerate_children([this, &pi](xml::qname const& tag) {
       if (tag == psf::Value) {
         auto v = parse_value();
-        if (v) {
+        if (!v.empty()) {
           pi.value = v;
         } else {
           // todo: implement error handling
@@ -229,7 +228,7 @@ private:
   boost::optional<std::pair<xml::qname, std::shared_ptr<scored_property_impl>>>
   parse_scored_property() {
     auto const name = get_name_attribute();
-    if (!name) return boost::none;
+    if (name.empty()) return boost::none;
 
     std::shared_ptr<scored_property_impl> sp
 	  = std::make_shared<scored_property_impl>();
@@ -237,8 +236,8 @@ private:
     enumerate_children([this, &sp](xml::qname const& tag) {
       if (tag == psf::Value) {
         auto value = parse_value();
-        if (value) {
-          sp->value = *value;
+        if (!value.empty()) {
+          sp->value = value;
         } else {
           // todo: error handling
         }
@@ -256,21 +255,20 @@ private:
       }
     });
 
-    return std::make_pair(*name, sp);
+    return std::make_pair(name, sp);
   }
 
   boost::optional<std::pair<xml::qname, std::shared_ptr<property_impl>>> parse_property() {
     auto const name = get_name_attribute();
-    if (!name) return boost::none;
-	auto const& name_ = *name;
+    if (name.empty()) return boost::none;
 
     std::shared_ptr<property_impl> prop = std::make_shared<property_impl>();
 
     enumerate_children([this, &prop](xml::qname const& tag) {
       if (tag == psf::Value) {
         auto value = parse_value();
-        if (value) {
-          prop->value = *value;
+        if (!value.empty()) {
+          prop->value = value;
         } else {
           // todo: error handling
         }
@@ -286,26 +284,26 @@ private:
       }
     });
 
-    return std::make_pair(name_, prop);
+    return std::make_pair(name, prop);
   }
 
   boost::optional<parameter_ref> parse_parameter_ref() {
     auto const name = get_name_attribute();
-    if (!name) return boost::none;
+    if (name.empty()) return boost::none;
 
     skip_subtree();
 
-    return parameter_ref { *name };
+    return parameter_ref { name };
   }
 
-  boost::optional<value> parse_value() {
+  value parse_value() {
     HRESULT const hr = com_raise_on_failure(
       move_to_attribute_by_name(xsi::type));
-    if (hr != S_OK) return boost::none;
+    if (hr != S_OK) return value();
 
     auto type = to_qname(get_value());
 
-    boost::optional<value> result;
+    value result;
 
     XmlNodeType nt;
     while (S_OK == reader->Read(&nt)) {
@@ -319,10 +317,10 @@ private:
           result = text;
         } else if (type == xsd::QName) {
           auto const qname = to_qname(text);
-          if (qname) {
-            result = *qname;
-          } else {
+          if (qname.empty()) {
             result = xml::qname{ text, "" };
+          } else {
+            result = qname;
           }
         } else if (type == xsd::integer) {
           result = std::stoi(text);
@@ -444,33 +442,34 @@ private:
     return boost::none;
   }
 
-  boost::optional<xml::qname> get_name_attribute() {
+  xml::qname get_name_attribute() {
     HRESULT const hr = com_raise_on_failure(
       reader->MoveToAttributeByName(L"name", nullptr));
     if (hr == S_OK) {
       return to_qname(get_value());
     } else {
-      return boost::none;
+      return xml::qname();
     }
   }
 
-  boost::optional<xml::qname> get_constrained_attribute() {
+  xml::qname get_constrained_attribute() {
     HRESULT const hr = com_raise_on_failure(
       reader->MoveToAttributeByName(L"constrained", nullptr));
     if (hr == S_OK) {
       return to_qname(get_value());
     } else {
-      return boost::none;
+      return xml::qname();
     }
   }
 
-  boost::optional<xml::qname> to_qname(std::string const& name) {
+  // TODO: error handling
+  xml::qname to_qname(std::string const& name) {
     auto const p = name.find(":");
     // todo: preadicate which p is npos
     auto const prefix = name.substr(0, p);
     auto const it = namespace_context.find(prefix);
 
-    if (it == namespace_context.end()) return boost::none;
+    if (it == namespace_context.end()) return xml::qname();
 
     return xml::qname { name.substr(p + 1),  it->second };
   }

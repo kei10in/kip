@@ -5,7 +5,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <boost/optional.hpp>
 #include <boost/variant.hpp>
 
 #include "kip/xml-ns.hpp"
@@ -89,7 +88,7 @@ using feature_collection = named_element_map<feature_def, feature_impl>;
 using parameter_def_collection = named_element_map<parameter_def, parameter_def_impl>;
 
 
-enum class value_type { string, qname, integer, decimal, };
+enum class value_type { empty, string, qname, integer, decimal, };
 
 
 class value_holder {
@@ -108,17 +107,19 @@ public:
 };
 
 
-template <value_type tag, class T>
+template <value_type tag>
 class base_value_holder : public value_holder {
 protected:
-  T const value_;
-  explicit base_value_holder(T const& v) : value_(v) {}
   value_type type() const override { return tag; }
+
   std::string const& string_value() const override { return statics().empty_string; }
   xml::qname const& qname_value() const override { return statics().empty_qname; }
   int integer_value() const override { return 0; }
   float decimal_value() const override { return 0.0; }
-  bool equals(value_holder const& rhs) const override { return rhs.equals(value_); }
+
+  // can't define basics
+  // bool equals(value_holder) const = 0;
+
   bool equals(std::string const& rhs) const override { return false; }
   bool equals(xml::qname const& rhs) const override { return false; }
   bool equals(int rhs) const override { return false; }
@@ -126,37 +127,57 @@ protected:
 };
 
 
+class empty_value_holder final : public base_value_holder<value_type::empty> {
+protected:
+  bool equals(value_holder const& rhs) const override {
+     return type() == rhs.type();
+  }
+};
+
+
+template <value_type tag, class T>
+class assigned_value_holder : public base_value_holder<tag> {
+protected:
+  T const value_;
+  explicit assigned_value_holder(T const& v) : value_(v) {}
+  bool equals(value_holder const& rhs) const override {
+    if (type() != rhs.type()) return false;
+    else                      return rhs.equals(value_);
+  }
+};
+
+
 class string_value_holder final
-  : public base_value_holder<value_type::string, std::string> {
+  : public assigned_value_holder<value_type::string, std::string> {
 public:
-  explicit string_value_holder(std::string const& v) : base_value_holder(v) {}
+  explicit string_value_holder(std::string const& v) : assigned_value_holder(v) {}
   std::string const& string_value() const override { return value_; }
   bool equals(std::string const& rhs) const override { return value_ == rhs; }
 };
 
 
 class qname_value_holder final
-  : public base_value_holder<value_type::qname, xml::qname> {
+  : public assigned_value_holder<value_type::qname, xml::qname> {
 public:
-  explicit qname_value_holder(xml::qname const& v) : base_value_holder(v) {}
+  explicit qname_value_holder(xml::qname const& v) : assigned_value_holder(v) {}
   xml::qname const& qname_value() const override { return value_; }
   bool equals(xml::qname const& rhs) const override { return value_ == rhs; }
 };
 
 
 class integer_value_holder final
-  : public base_value_holder<value_type::integer, int> {
+  : public assigned_value_holder<value_type::integer, int> {
 public:
-  explicit integer_value_holder(int v) : base_value_holder(v) {}
+  explicit integer_value_holder(int v) : assigned_value_holder(v) {}
   int integer_value() const override { return value_; }
   bool equals(int rhs) const override { return value_ == rhs; }
 };
 
 
 class decimal_value_holder final
-  : public base_value_holder<value_type::decimal, float> {
+  : public assigned_value_holder<value_type::decimal, float> {
 public:
-  explicit decimal_value_holder(float v) : base_value_holder(v) {}
+  explicit decimal_value_holder(float v) : assigned_value_holder(v) {}
   float decimal_value() const override { return value_; }
   bool equals(float rhs) const override { return value_ == rhs; }
 };
@@ -166,6 +187,10 @@ class value {
   std::shared_ptr<value_holder> holder;
 
 public:
+  value()
+    : holder(std::make_shared<empty_value_holder>())
+  {}
+
   value(std::string const& v)
     : holder(std::make_shared<string_value_holder>(v))
   {}
@@ -182,11 +207,15 @@ public:
     : holder(std::make_shared<decimal_value_holder>(v))
   {}
 
+  bool empty() const {
+    return type() == value_type::empty;
+  }
+
   value_type type() const                 { return holder->type(); }
   std::string const& string_value() const { return holder->string_value(); }
   xml::qname const& qname_value() const   { return holder->qname_value(); }
   int integer_value() const               { return holder->integer_value() ;}
-  float decimal_value() const              { return holder->decimal_value(); }
+  float decimal_value() const             { return holder->decimal_value(); }
 
   bool operator==(value const& rhs) const {
     return holder->equals(*rhs.holder);
@@ -219,7 +248,7 @@ inline bool operator!=(parameter_ref const& lhs, parameter_ref const& rhs) {
 
 
 struct property_impl {
-  boost::optional<kip::value> value;
+  kip::value value;
   property_collection properties;
 };
 
@@ -262,7 +291,7 @@ public:
   }
 
   kip::value const& value() const {
-    return *pimpl->value;
+    return pimpl->value;
   }
 
   property const& operator=(xml::qname const& v) {
@@ -279,8 +308,8 @@ public:
   void traverse(F& f) const {
     f.start(*this);
 
-    if (pimpl->value) {
-      pimpl->value->traverse(f);
+    if (!pimpl->value.empty()) {
+      pimpl->value.traverse(f);
     }
 
     pimpl->properties.traverse(f);
@@ -293,7 +322,7 @@ public:
 
 struct scored_property_impl {
   boost::variant<boost::blank, kip::value, parameter_ref> content;
-  boost::optional<kip::value> value;
+  kip::value value;
   scored_property_collection scored_properties;
   property_collection properties;
 };
@@ -335,15 +364,15 @@ public:
   }
 
   kip::value const& value() const {
-    return *pimpl->value;
+    return pimpl->value;
   }
 
   template <class F>
   void traverse(F& f) const {
     f.start(*this);
 
-    if (pimpl->value) {
-      pimpl->value->traverse(f);
+    if (!pimpl->value.empty()) {
+      pimpl->value.traverse(f);
     }
 
     pimpl->properties.traverse(f);
@@ -356,14 +385,15 @@ public:
 
 
 struct option_impl {
-  boost::optional<xml::qname> const name;
-  boost::optional<xml::qname> const constrained;
+  xml::qname const name;
+  xml::qname const constrained;
   scored_property_collection scored_properties;
   property_collection properties;
 
-  option_impl(boost::optional<xml::qname> const& name) : name(name) {}
-  option_impl(boost::optional<xml::qname> const& name,
-    boost::optional<xml::qname> const& constrained)
+  option_impl(xml::qname const& name) : name(name) {}
+  option_impl(
+    xml::qname const& name,
+    xml::qname const& constrained)
     : name(name)
     , constrained(constrained)
   {}
@@ -400,11 +430,11 @@ public:
     return pimpl == nullptr;
   }
 
-  boost::optional<xml::qname> const& name() const {
+  xml::qname const& name() const {
     return pimpl->name;
   }
 
-  boost::optional<xml::qname> const& constrained() const {
+  xml::qname const& constrained() const {
     return pimpl->constrained;
   }
 
@@ -515,7 +545,7 @@ public:
 
 
 struct parameter_init {
-  boost::optional<kip::value> value;
+  kip::value value;
 };
 
 inline bool operator==(parameter_init const& lhs, parameter_init const& rhs) {

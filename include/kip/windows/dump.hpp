@@ -176,8 +176,8 @@ public:
 
   void start(option const& o) {
     w.start_element(psf::Option);
-    if (o.name()) {
-      w.attribute("name", *o.name());
+    if (!o.name().empty()) {
+      w.attribute("name", o.name());
     }
   }
 
