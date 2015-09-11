@@ -228,6 +228,8 @@ public:
 
   template <class F>
   void traverse(F& f) const {
+    if (empty()) return;
+
     f.start(*this);
     f.end(*this);
   }
@@ -308,10 +310,7 @@ public:
   void traverse(F& f) const {
     f.start(*this);
 
-    if (!pimpl->value.empty()) {
-      pimpl->value.traverse(f);
-    }
-
+    pimpl->value.traverse(f);
     pimpl->properties.traverse(f);
 
     f.end(*this);
@@ -371,10 +370,7 @@ public:
   void traverse(F& f) const {
     f.start(*this);
 
-    if (!pimpl->value.empty()) {
-      pimpl->value.traverse(f);
-    }
-
+    pimpl->value.traverse(f);
     pimpl->properties.traverse(f);
     pimpl->scored_properties.traverse(f);
 
