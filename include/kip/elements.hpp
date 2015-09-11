@@ -47,7 +47,7 @@ public:
   }
 
   std::pair<typename container_t::iterator, bool>
-    insert(std::pair<xml::qname, std::shared_ptr<U>> const& v) {
+  insert(std::pair<xml::qname, std::shared_ptr<U>> const& v) {
     return container_.insert(v);
   }
 
