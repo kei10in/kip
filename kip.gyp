@@ -42,11 +42,14 @@
             'include/kip/hash-combine.hpp',
             'include/kip/keywords.hpp',
             'include/kip/print-schema.hpp',
+            'include/kip/ret.hpp',
             'include/kip/xml-ns.hpp',
         ],
         'msbuild_configuration_attributes': {
-            'CharacterSet': 'Unicode'
-        }
+            'CharacterSet': 'Unicode',
+            'IntermediateDirectory': '$(Platform)\\$(Configuration)\\',
+            'OutputDirectory': '$(SolutionDir)$(Platform)\\$(Configuration)\\',
+        },
     },
     'targets': [
         {
@@ -56,7 +59,13 @@
             'sources': [
                 'test/core/main.cpp',
                 'test/core/test-print-schema-document.cpp',
+                'test/core/test-ret.cpp',
             ],
+            'msbuild_settings': {
+                'Link': {
+                    'SubSystem': 'Console',
+                },
+            },
         },
     ],
     'conditions': [

@@ -10,6 +10,7 @@
 
 namespace kip {
 
+
 struct static_object {
   std::string const empty_string;
   xml::qname const empty_qname;

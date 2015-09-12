@@ -7,13 +7,17 @@ namespace {
 
 
 TEST_CASE("construct print-capabilities") {
-  using namespace kip;
+  //using namespace kip;
 
-  feature_impl ft0(psk::PageMediaSize);
-  ft0.property(psf::SelectionType) = psk::PickOne;
-  ft0.property(psk::DisplayName) = "Paper Size";
+  //feature_impl ft0(psk::PageMediaSize);
+  //ft0.property(psf::SelectionType) = psk::PickOne;
+  //ft0.property(psk::DisplayName) = "Paper Size";
 
-  REQUIRE(ft0.property(psf::SelectionType).as<xml::qname>() == psk::PickOne);
+  //REQUIRE(ft0.property(psf::SelectionType).as<xml::qname>() == psk::PickOne);
+
+
+
+
   //REQUIRE(ft0.property(psk::DisplayName).as<std::string>() == "Paper Size")
 
   // option op0(psk::ISOA4);
