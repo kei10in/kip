@@ -5,8 +5,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <boost/variant.hpp>
-
 #include "kip/xml-ns.hpp"
 
 
@@ -320,7 +318,7 @@ public:
 
 
 struct scored_property_impl {
-  boost::variant<boost::blank, kip::value, parameter_ref> content;
+  parameter_ref reference;
   kip::value value;
   scored_property_collection scored_properties;
   property_collection properties;

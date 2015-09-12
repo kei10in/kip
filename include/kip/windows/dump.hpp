@@ -131,16 +131,6 @@ inline xml::qname to_qname(value_type vt) {
   }
 }
 
-struct write_text : public boost::static_visitor<void> {
-  xml_writer& w;
-  write_text(xml_writer& w) : w(w) {}
-
-  template <class T>
-  void operator()(T const& v) const {
-    w.text(v);
-  }
-};
-
 
 class serializer {
   xml_writer w;

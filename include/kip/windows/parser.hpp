@@ -244,7 +244,7 @@ private:
       } else if (tag == psf::ParameterRef) {
         auto pr = parse_parameter_ref();
         if (pr) {
-          sp->content = *pr;
+          sp->reference = *pr;
         } else {
           // todo: error handling
         }

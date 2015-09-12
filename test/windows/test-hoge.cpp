@@ -3,8 +3,6 @@
 #include <comdef.h>
 #include <comip.h>
 
-#include <boost/optional/optional_io.hpp>
-
 #include "catch.hpp"
 
 #include "kip/print-schema.hpp"
